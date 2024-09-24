@@ -5024,12 +5024,13 @@ class company {
             return;
         }
 
+        // Pull current courses/old courses so we can update if these are changed
+        $currentcourses = $DB->get_records('companylicense_courses', array('licenseid' => $licenseid), null, 'courseid');
+        $oldcourses = (array) json_decode($event->other['oldcourses'], true);
+
         if (!empty($licenserecord->program)) {
             // This is a program of courses.
             // If it's been updated we need to deal with any course changes.
-            $currentcourses = $DB->get_records('companylicense_courses', array('licenseid' => $licenseid), null, 'courseid');
-            $oldcourses = (array) json_decode($event->other['oldcourses'], true);
-
             // check for courses being removed.
             foreach ($oldcourses as $oldcourse) {
                 $oldcourseid = $oldcourse['courseid'];
