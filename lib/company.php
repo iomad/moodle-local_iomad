@@ -299,7 +299,7 @@ class company {
                 $sqlparams['suspended'] = 0;
                 $sqlwhere .= " AND suspended = :suspended ";
             }
-            $companies = $DB->get_records_sql_menu("SELECT id, IF (suspended=0, name, concat(name, ' (S)')) AS name FROM {company}
+            $companies = $DB->get_records_sql_menu("SELECT id, CASE WHEN suspended=0 THEN name ELSE concat(name, ' (S)') END AS name FROM {company}
                                                     WHERE 1 = 1
                                                     $sqlwhere
                                                     ORDER BY name",
