@@ -568,7 +568,7 @@ class iomad {
         global $DB, $USER;
 
         $context = context_system::instance();
-        $companyid = self::get_my_companyid($context);
+        $companyid = self::get_my_companyid($context, false);
 
         if (!empty($companyid)) {
             $companyselfenrolcourses = $DB->get_records_sql("SELECT DISTINCT c.id,c.category,c.sortorder,c.shortname,c.fullname,c.idnumber,c.startdate,c.defaultgroupingid,c.groupmodeforce,c.groupmode, c.visible
