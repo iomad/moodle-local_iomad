@@ -958,7 +958,7 @@ class company {
         $params['companyid'] = $this->id;
         $params['companyidforjoin'] = $this->id;
 
-        $sql = " SELECT u.id, u.id AS mid
+        $sql = " SELECT DISTINCT u.id, u.id AS mid
                 FROM
                     {company_users} cu
                     INNER JOIN {user} u ON (cu.userid = u.id)
