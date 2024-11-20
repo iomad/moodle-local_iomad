@@ -4234,6 +4234,10 @@ class company {
             return;
         }
 
+        // Update the company name to mark it that its being deleted.
+        $company->name = get_string('deletingcompany', 'block_iomad_company_admin', $company->name);
+        $DB->update_record('company', $company);
+
         // Set up the adhoc task to do this.
         // Fire off the adhoc task to populate this new field correctly.
         $task = new local_iomad\task\deletecompanytask();
