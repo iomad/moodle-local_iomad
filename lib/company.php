@@ -4950,10 +4950,20 @@ class company {
         // Deal with any children.
         if ($children = $DB->get_records('companylicense', array('parentid' => $licenseid))) {
             foreach ($children as $child) {
-                // Clear down all of them initially.
-                $DB->delete_records('companylicense_courses', array('licenseid' => $child->id));
-                if (!empty($currentcourses)) {
-                    // Add the course license allocations.
+                // If not a program of courses, check if child courses are all still present in parent courses
+                if (!empty($currentcourses) && empty($licenserecord->program)) {
+                    $childcourses = $DB->get_records('companylicense_courses', array('licenseid' => $child->id), '', 'courseid');
+                    $childparentcourses = array_intersect_key($childcourses, $currentcourses);
+                    // Clear down all of them initially.
+                    $DB->delete_records('companylicense_courses', array('licenseid' => $child->id));
+                    foreach ($childparentcourses as $selectedcourse) {
+                        $DB->insert_record('companylicense_courses', array('licenseid' => $child->id, 'courseid' => $selectedcourse->courseid));
+                    }
+                }
+                // If parent license is for a program of courses, overwrite child license with parent course license allocations.
+                if (!empty($currentcourses) && !empty($licenserecord->program)) {
+                    // Clear down all of them initially.
+                    $DB->delete_records('companylicense_courses', array('licenseid' => $child->id));
                     foreach ($currentcourses as $selectedcourse) {
                         $DB->insert_record('companylicense_courses', array('licenseid' => $child->id, 'courseid' => $selectedcourse->courseid));
                     }
