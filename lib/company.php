@@ -670,6 +670,8 @@ class company {
     public function add_course($course, $departmentid=0, $own=false, $licensed=false) {
         global $DB, $CFG;
 
+        $coursecontext = context_course::instance($course->id);
+
         if ($departmentid != 0 ) {
             // Adding to a specified department.
             $companydepartment = $departmentid;
@@ -693,10 +695,8 @@ class company {
         }
         // Set up manager roles.
         if (!$licensed) {
-            $companycoursenoneditorrole = $DB->get_record('role',
-                                               array('shortname' => 'companycoursenoneditor'));
-            $companycourseeditorrole = $DB->get_record('role',
-                                                        array('shortname' => 'companycourseeditor'));
+            $companycoursenoneditorrole = $DB->get_record('role', ['shortname' => 'companycoursenoneditor']);
+            $companycourseeditorrole = $DB->get_record('role', ['shortname' => 'companycourseeditor']);
             if ($CFG->iomad_autoenrol_managers) {
                 // Enrol the managers as teacher types.
                 if ($companymanagers = $DB->get_records_sql("SELECT * FROM {company_users}
@@ -719,6 +719,11 @@ class company {
                                         // Assign the company manager course access role.
                                         company_user::enrol($user, array($course->id), $this->id,
                                                             $companycourseeditorrole->id);
+
+                                        // Check if this is a newly delegated course?
+                                        if (user_has_role_assignment($user->id, $companycoursenoneditorrole->id, $coursecontext->id)) {
+                                            role_unassign($companycoursenoneditorrole->id, $user->id, $coursecontext->id);
+                                        }
                                     }
                                 }
                             }
@@ -742,6 +747,11 @@ class company {
                                     // Assign the company manager course access role.
                                     company_user::enrol($user, array($course->id), $this->id,
                                                         $companycourseeditorrole->id);
+
+                                    // Check if this is a newly delegated course?
+                                    if (user_has_role_assignment($user->id, $companycoursenoneditorrole->id, $coursecontext->id)) {
+                                        role_unassign($companycoursenoneditorrole->id, $user->id, $coursecontext->id);
+                                    }
                                 }
                             }
                         }
@@ -757,6 +767,73 @@ class company {
                                                                     'courseid' => $course->id));
             }
         }
+
+        cache_helper::purge_by_event('changesincompanycourses');
+        return true;
+    }
+
+    /**
+     * removes control of a course froma company
+     *
+     * Parameters -
+     *              $courseid = int;
+     *
+     **/
+    public function remove_control_of_course($courseid) {
+        global $DB, $CFG;
+
+        $coursecontext = context_course::instance($courseid);
+
+        // Set up manager roles.
+        $companycoursenoneditorrole = $DB->get_record('role', ['shortname' => 'companycoursenoneditor']);
+        $companycourseeditorrole = $DB->get_record('role', ['shortname' => 'companycourseeditor']);
+
+        if ($CFG->iomad_autoenrol_managers) {
+            // Enrol the managers as teacher types.
+            if ($companymanagers = $DB->get_records_sql("SELECT * FROM {company_users}
+                                                         WHERE companyid = :companyid
+                                                         AND managertype != 0", array('companyid' => $this->id))) {
+                foreach ($companymanagers as $companymanager) {
+                    if ($user = $DB->get_record('user', array('id' => $companymanager->userid,
+                                                              'deleted' => 0)) ) {
+                        if ($DB->record_exists('course', array('id' => $courseid))) {
+                            // Not created by a company manager.
+                            company_user::enrol($user, [$courseid], $this->id,
+                                                $companycoursenoneditorrole->id);
+
+                            // Clean up old roles.
+                            if (user_has_role_assignment($user->id, $companycourseeditorrole->id, $coursecontext->id)) {
+                                role_unassign($companycourseeditorrole->id, $user->id, $coursecontext->id);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Enrol the educators as teacher types.
+            if ($educators = $DB->get_records_sql("SELECT * FROM {company_users}
+                                                         WHERE companyid = :companyid
+                                                         AND educator != 0", array('companyid' => $this->id))) {
+                foreach ($educators as $educator) {
+                    if ($user = $DB->get_record('user', array('id' => $educator->userid,
+                                                              'deleted' => 0)) ) {
+                        if ($DB->record_exists('course', array('id' => $courseid))) {
+                            company_user::enrol($user, [$courseid], $this->id,
+                                                $companycoursenoneditorrole->id);
+
+                            // Clean up old roles.
+                            if (user_has_role_assignment($user->id, $companycourseeditorrole->id, $coursecontext->id)) {
+                                role_unassign($companycourseeditorrole->id, $user->id, $coursecontext->id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // remove it from the list of company created courses.
+        $DB->delete_records('company_created_courses', ['companyid' => $this->id,
+                                                        'courseid' => $courseid]);
 
         cache_helper::purge_by_event('changesincompanycourses');
         return true;
