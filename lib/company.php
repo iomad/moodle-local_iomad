@@ -4900,10 +4900,14 @@ class company {
                     $enrol = enrol_get_plugin('license');
 
                     // Enrol the user in the course.
-                    // Is the license available yet?
-                    if (!empty($licenserecord->startdate) && $licenserecord->startdate > time()) {
+                    // Is the license available yet and specifed time is before this?
+                    if ((!empty($licenserecord->startdate) && $licenserecord->startdate > time()) &&
+                        (!empty($duedate) && $licenserecord->startdate > $duedate)) {
                         // If not set up the enrolment from when it is.
                         $timestart = $licenserecord->startdate;
+                    } else if (!empty($duedate)) {
+                        // Start it when the emails are due to go out.
+                        $timestart = $duedate;
                     } else {
                         // Otherwise start it now.
                         $timestart = time();
