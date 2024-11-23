@@ -3687,7 +3687,7 @@ class company {
      *              $user = stdclass();
      *
      **/
-    public function autoenrol($user) {
+    public function autoenrol($user, $due = 0) {
         global $DB, $CFG, $SESSION, $SITE, $OUTPUT;
 
         // Did we get passed a user id?
@@ -3737,7 +3737,7 @@ class company {
                         // Create an event.
                         $eventother = array('licenseid' => $newlicense->licenseid,
                                             'issuedate' => time(),
-                                            'duedate' => 0);
+                                            'duedate' => $due);
                         $event = \block_iomad_company_admin\event\user_license_assigned::create(array('context' => context_course::instance($course->id),
                                                                                                       'objectid' => $newlicense->id,
                                                                                                       'courseid' => $course->id,
@@ -3748,7 +3748,7 @@ class company {
                         $errors .= format_string($course->fullname) . " ";
                     }
                 } else {
-                    company_user::enrol($user, array($course->id));
+                    company_user::enrol($user, array($course->id), $this->id, false, false, $due);
                 }
             }
         }
