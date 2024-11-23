@@ -344,7 +344,7 @@ class company_user {
      * @param array $courseids
      * @return void
      */
-    public static function enrol($user, $courseids, $companyid=null, $rid = 0, $groupid = 0) {
+    public static function enrol($user, $courseids, $companyid=null, $rid = 0, $groupid = 0, $today = null) {
         global $DB;
         // This function consists of code copied from uploaduser.php.
 
@@ -358,8 +358,9 @@ class company_user {
             $courseids = array($courseids);
         }
 
-        $today = time();
-        $today = make_timestamp(date('Y', $today), date('m', $today), date('d', $today), 0, 0, 0);
+        if (empty($today)) {
+            $today = time();
+        }
 
         $manualcache  = array(); // Cache of used manual enrol plugins in each course.
 
