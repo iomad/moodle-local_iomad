@@ -2166,10 +2166,19 @@ class company {
      * Returns array()
      *
      **/
-    public static function get_all_subdepartments($parentnodeid, $addchildcompanies = true) {
+    public static function get_all_subdepartments($parentnodeid, $addchildcompanies = false) {
+        global $PAGE;
+
+        // format_string() references $PAGE context so nee to set that if it's not already set.
+        $options = [];
+        if (empty($PAGE->context)) {
+            // format string needs the context.
+            $options['context'] = context_system::instance();
+        }
+
         $parentnode = self::get_departmentbyid($parentnodeid);
         $parentlist = array();
-        $parentlist[$parentnodeid] = format_string($parentnode->name);
+        $parentlist[$parentnodeid] = format_string($parentnode->name, true, $options);
         $departmenttree = self::get_subdepartments($parentnode);
         if ($addchildcompanies) {
             $currentcompany = new company($parentnode->company);
@@ -2177,7 +2186,7 @@ class company {
                 foreach ($childcompanies as $childcompany) {
                     $childnode = self::get_company_parentnode($childcompany->id);
                     $childtree = self::get_subdepartments($childnode);
-                    $childlist[$childnode->id] = format_string($childnode->name);
+                    $childlist[$childnode->id] = format_string($childnode->name, true, $options);
                     $departmenttree->children[] = $childtree;
                     
                 }
@@ -2185,7 +2194,7 @@ class company {
         }
 
         $departmentlist = self::array_flatten($parentlist +
-                                              self::get_department_list($departmenttree));
+                          self::get_department_list($departmenttree));
 
         return $departmentlist;
     }
