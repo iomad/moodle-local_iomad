@@ -4587,6 +4587,7 @@ class company {
         $license = new stdclass();
         $license->length = $licenserecord->validlength;
         $license->valid = date($CFG->iomad_date_format, $licenserecord->expirydate);
+        $license->startdate = date($CFG->iomad_date_format, $licenserecord->startdate);
 
         if (!$noemail) {
         // Send out the email.
