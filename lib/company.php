@@ -133,21 +133,21 @@ class company {
      * Returns array();
      *
      **/
-    public function get_managertypes() {
+    public function get_managertypes($full = false) {
         global $CFG;
 
         $returnarray = array('0' => get_string('user', 'block_iomad_company_admin'));
         $companycontext = \core\context\company::instance($this->id);
-        if (iomad::has_capability('block/iomad_company_admin:assign_company_manager', $companycontext)) {
+        if ($full || iomad::has_capability('block/iomad_company_admin:assign_company_manager', $companycontext)) {
             $returnarray['1'] = get_string('companymanager', 'block_iomad_company_admin');
         }
-        if (iomad::has_capability('block/iomad_company_admin:assign_department_manager', $companycontext)) {
+        if ($full || iomad::has_capability('block/iomad_company_admin:assign_department_manager', $companycontext)) {
             $returnarray['2'] = get_string('departmentmanager', 'block_iomad_company_admin');
         }
-        if (!$CFG->iomad_autoenrol_managers && iomad::has_capability('block/iomad_company_admin:assign_educator', $companycontext)) {
+        if ($full || (!$CFG->iomad_autoenrol_managers && iomad::has_capability('block/iomad_company_admin:assign_educator', $companycontext))) {
             $returnarray['3'] = get_string('educator', 'block_iomad_company_admin');
         }
-        if (iomad::has_capability('block/iomad_company_admin:assign_company_reporter', $companycontext)) {
+        if ($full || iomad::has_capability('block/iomad_company_admin:assign_company_reporter', $companycontext)) {
             $returnarray['4'] = get_string('companyreporter', 'block_iomad_company_admin');
         }
         return $returnarray;
@@ -1197,7 +1197,7 @@ class company {
 
         $success = true;
         $company = new company($companyid);
-        $managertypes = $company->get_managertypes();
+        $managertypes = $company->get_managertypes(true);
 
         // Is this a real user?
         if (!$userrec = $DB->get_record('user', array('id' => $userid))) {
