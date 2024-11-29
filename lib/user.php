@@ -933,11 +933,15 @@ class company_user {
     public static function delete_user_course($userid, $courseid, $action = '', $litid = 0) {
         global $DB, $CFG;
 
+        $rebuildcache = false;
+
         try {
             $transaction = $DB->start_delegated_transaction();
 
             // Is this a single entry only?
             if (empty($litid)) {
+                $rebuildcache = true;
+
                 // Remove enrolments
                 $plugins = enrol_get_plugins(true);
                 $instances = enrol_get_instances($courseid, true);
@@ -1016,7 +1020,6 @@ class company_user {
                     }
                 }
             }
-
             if ($action == 'autodelete') {
                 // If this is being called from the course expiry event then the parameters are slightly different.
                 $params =  array('licensecourseid' => $courseid,
@@ -1046,12 +1049,16 @@ class company_user {
 
             // Deal with Iomad track table stuff.
             if ($action == 'delete' || $action == 'revoke') {
-                $DB->delete_records('local_iomad_track', array('userid' => $userid, 'courseid' => $courseid, 'timecompleted' => null));
+                if (empty($litid)) {
+                    $DB->delete_records('local_iomad_track', array('userid' => $userid, 'courseid' => $courseid, 'timecompleted' => null));
+                } else {
+                    $DB->delete_records('local_iomad_track', ['id' => $litid]);
+                }
             } else {
                 $litparams = $litparams +
                              ['userid' => $userid,
                               'courseid' => $courseid];
-                $litsql .= "userid = :userid AND courseid = :courseid AND timecompleted > 0";
+                $litsql .= "userid = :userid AND courseid = :courseid";
                 $DB->set_field_select('local_iomad_track', 'coursecleared', 1, $litsql, $litparams);
             }
             // Fix company licenses
@@ -1115,6 +1122,12 @@ class company_user {
             }
             // All OK commit the transaction.
             $transaction->allow_commit();
+
+            // Clear the course cache as can cause confusion for what is/isn't completed.
+            if ($rebuildcache) {
+                rebuild_course_cache($courseid, true);
+            }
+
         } catch(Exception $e) {
             $transaction->rollback($e);
         }
