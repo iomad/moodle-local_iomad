@@ -1058,7 +1058,7 @@ class company_user {
                 $litparams = $litparams +
                              ['userid' => $userid,
                               'courseid' => $courseid];
-                $litsql .= "userid = :userid AND courseid = :courseid";
+                $litsql .= "userid = :userid AND courseid = :courseid and timecompleted > 0";
                 $DB->set_field_select('local_iomad_track', 'coursecleared', 1, $litsql, $litparams);
             }
             // Fix company licenses
