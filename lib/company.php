@@ -2994,7 +2994,7 @@ class company {
         return false;
     }
 
-    public function get_menu_courses($shared = false, $licensed = false, $groups = false, $default = true, $onlylicensed = false) {
+    public function get_menu_courses($shared = false, $licensed = false, $groups = false, $default = true, $onlylicensed = false, $noncompany = false) {
         global $DB;
 
         // Deal with license option.
@@ -3043,6 +3043,17 @@ class company {
             $groupsql = "";
         }
 
+        // Deal with any courses which don't belong to any company.
+        $noncompanysql = "";
+        if ($noncompany) {
+            $noncompanysql = " OR
+                               c.id IN (
+                                  SELECT id FROM {course}
+                                  WHERE id NOT IN (
+                                      SELECT courseid FROM {company_course}
+                                  )
+                              )";
+        }
         // Get the courses.
         $retcourses = $DB->get_records_sql_menu("SELECT c.id, c.fullname
                                                  FROM {course} c
@@ -3055,6 +3066,7 @@ class company {
                                                      WHERE companyid = :companyid
                                                  )
                                                  $sharedsql
+                                                 $noncompanysql
                                                  ORDER BY c.fullname",
                                                  array('companyid' => $this->id,
                                                        'companyid2' => $this->id));
