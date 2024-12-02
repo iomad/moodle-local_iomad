@@ -1220,6 +1220,11 @@ class company {
         $companytree = $topcompany->get_child_companies_recursive();
         $parentcompanies = $company->get_parent_companies_recursive();
         $companytree[$topcompanyid] = $topcompanyid;
+        if (!empty($companytree)) {
+            $parentcompanysql = " AND companyid NOT IN (" . implode(',', array_keys($companytree)) . ")";
+        } else {
+            $parentcompanysql = " AND companyid != :companyid";
+        }
 
 
         // Get the list of company courses.
@@ -1283,13 +1288,14 @@ class company {
                 $DB->set_field('company_users', 'managertype', 0, ['companyid' => $companyid, 'userid' => $userid]);
 
             } else if ($managertype == 1 &&
-                       $DB->get_records_sql('SELECT id FROM {company_users}
+                       $DB->get_records_sql("SELECT id FROM {company_users}
                                             WHERE
                                             userid = :userid
                                             AND managertype = :roletype
-                                            AND companyid != :companyid', array('userid' => $userid,
-                                                              'roletype' => 1,
-                                                              'companyid' => $companyid))) {
+                                            $parentcompanysql",
+                                            array('userid' => $userid,
+                                                  'roletype' => 1,
+                                                  'companyid' => $companyid))) {
                 // We have a company manager from another company.
                 // Deal with company courses.
                 if ($CFG->iomad_autoenrol_managers && !empty($companycourses)) {
@@ -1310,6 +1316,7 @@ class company {
                             }
                         }
                     }
+                    role_assign($companymanagerrole->id, $userid, $companycontext->id);
                     // External company managers don't go down the child company tree.
                 }
             } else if ($managertype == 1) {
@@ -1837,7 +1844,6 @@ class company {
         $parentmanagers = $parentcompany->get_company_managers();
         $finalcompany = new company($finalcompanyid);
         foreach ($parentmanagers as $managerid) {
-
             $finalcompany->assign_user_to_company($managerid->userid, 0, 1, true);
         }
         // Is there any more?
