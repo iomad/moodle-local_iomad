@@ -5385,7 +5385,6 @@ class company {
         $action = 'autodelete';
 
         $companyid = $event->companyid;
-mtrace("In company user_course_expired");
         if ($DB->count_records_select('local_iomad_track',
                                       'userid = :userid
                                        AND courseid = :courseid
@@ -5393,7 +5392,6 @@ mtrace("In company user_course_expired");
                                        AND timecompleted IS NULL',
                                       ['userid' => $userid,
                                        'courseid' => $courseid]) > 0) {
-mtrace("We got more than one");
 
 
             // Get the specific record for this company.
@@ -5407,17 +5405,14 @@ mtrace("We got more than one");
                                                 'companyid' => $companyid,
                                                 'courseid' => $courseid]);
             foreach ($licrecs as $licrec) {
-mtrace("removing $licrec->id");
 
                 // Remove this specific record.
                 company_user::delete_user_course($userid, $courseid, $action, $licrec->id);
             }
         } else {
-mtrace("Only the one - removing them completely");
             // Delete them.
             company_user::delete_user_course($userid, $courseid, $action);
         }
-
 
         return true;
     }
