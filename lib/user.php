@@ -207,7 +207,7 @@ class company_user {
         }
 
         if ( isset($data->selectedcourses) ) {
-            self::enrol($user, array_keys($data->selectedcourses));
+            self::enrol($user, array_keys($data->selectedcourses), $company->id, 0, 0, $data->due);
         }
 
         // Deal with auto enrolments.
