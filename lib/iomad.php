@@ -753,7 +753,7 @@ class iomad {
      * the user belongs to a different company.
      * Otherwise, return true
      */
-    public static function iomad_check_course($course) {
+    public static function iomad_check_course($courseid) {
         global $CFG, $DB, $USER;
 
         // If we are installing this will be called to build
@@ -762,18 +762,21 @@ class iomad {
             return true;
         }
 
-        // Try to find the category in company list.
-        if (!empty($course->id) && $company = $DB->get_record( 'company_course', array('courseid' => $course->id) ) ) {
-            // If this is not the user's company then we return false.
-            if ($DB->get_record('company_users', array('userid' => $USER->id, 'companyid' => $company->companyid))) {
-                // User is not assigned to this company - hide the category.
-                return true;
-            } else {
-                return false;
-            }
+        // Get the user company id.
+        $companyid = iomad::get_my_companyid(context_system::instance());
+        $company = new company($companyid);
+
+        $companycourses = $company->get_menu_courses(true, false, false, false, false, true);
+        
+        // Check if the passed courseid is in the list.
+        if (!empty($companycourses[$courseid])) {
+
+            // Course is visible.
+            return true;
         }
-        // Category is visible.
-        return true;
+
+        // User can't see it.
+        return false;
     }
 
     /**
