@@ -849,10 +849,28 @@ class company {
      *
      **/
     public static function remove_course($course, $companyid, $departmentid=0) {
-        global $DB;
+        global $DB, $PAGE;
 
         $errors = false;
         $transaction = $DB->start_delegated_transaction();
+
+        if (!$course = $DB->get_record('course', array('id' => $course->id))) {
+            try {
+                throw new Exception(get_string('couldnotdeletecourse', 'block_iomad_Company_admin'));
+            } catch (\Exception $e) {
+                $transaction->rollback($e);
+            }
+            return false;
+        }
+
+        if (!$iomadcourse = $DB->get_record('iomad_courses', array('courseid' => $course->id))) {
+            try {
+                throw new Exception(get_string('couldnotdeletecourse', 'block_iomad_Company_admin'));
+            } catch (\Exception $e) {
+                $transaction->rollback($e);
+            }
+            return false;
+        }
 
         if ($departmentid == 0) {
             // Deal with the company departments.
@@ -866,7 +884,7 @@ class company {
                 }
             }
             // Check if its an unshared course in iomad.
-            if ($DB->get_record('iomad_courses', array('courseid' => $course->id, 'shared' => 0))) {
+            if ($iomadcourse->shared == 0) {
                 if (!$DB->delete_records('iomad_courses', array('courseid' => $course->id, 'shared' => 0))) {
                     $errors = true;
                 }
@@ -875,11 +893,85 @@ class company {
                                                        'courseid' => $course->id))) {
                 $errors = true;
             }
+
+            if (!$DB->delete_records('company_shared_courses', array('companyid' => $companyid,
+                                                                     'courseid' => $course->id))) {
+                $errors = true;
+            }
+
         } else {
             // Put course in default company department.
             $companydepartment = self::get_company_parentnode($companyid);
             if (!self::assign_course_to_department($companydepartment->id, $course->id, $companyid)) {
                 $errors = true;
+            }
+        }
+
+        // Remove the course from any licenses
+        if ($licenses = $DB->get_records_sql("SELECT cl.* FROM {companylicense} cl
+                                              JOIN {companylicense_courses} clc ON (cl.id = clc.licenseid)
+                                              WHERE clc.courseid = :courseid
+                                              AND cl.companyid = :companyid",
+                                              array('courseid' => $course->id,
+                                                    'companyid' => $companyid))) {
+
+            foreach ($licenses as $license) {
+                // Delete anyone using the license for that course.
+                if (!$DB->delete_records('companylicense_users', array('licenseid' => $license->id, 'licensecourseid' => $course->id))) {
+                    $errors = true;
+                }
+                // Delete the course from the license.
+                if (!$DB->delete_records('companylicense_courses', array('licenseid' => $license->id, 'courseid' => $course->id))) {
+                    $errors = true;
+                }
+
+                // Fire an event for this.
+                $eventother = array('licenseid' => $license->id,
+                                    'parentid' => $license->parentid);
+
+                $event = \block_iomad_company_admin\event\company_license_updated::create(array('context' => \core\context\company::instance($companyid),
+                                                                                                'userid' => $USER->id,
+                                                                                                'objectid' => $license->id,
+                                                                                                'other' => $eventother));
+                $event->trigger();
+            }
+        }
+
+        // Un-enrol anyone from the course which hasn't already been cleared.
+        $courseenrolment = new course_enrolment_manager($PAGE, $course);
+        $userlist = $courseenrolment->get_users('u.id', 'ASC', 0, 0);
+
+        // We only want _our_ company users if it's shared.
+        if ($iomadcourse->shared != 0) {
+            $allcompanyusers = $DB->get_records_sql("SELECT DISTINCT lit.userid
+                                                     FROM {local_iomad_track} lit
+                                                     WHERE lit.coursecleared = 0
+                                                     AND lit.courseid = :courseid
+                                                     AND lit.companyid = :companyid
+                                                     AND lit.userid NOT IN (
+                                                         SELECT lit2.userid FROM {local_iomad_track} lit2
+                                                         WHERE lit.userid = lit2.userid
+                                                         AND lit.courseid = lit2.courseid
+                                                         AND lit.coursecleared = lit2.coursecleared
+                                                         AND lit.companyid != lit2.companyid
+                                                     )",
+                                                     ['courseid' => $course->id,
+                                                      'companyid' => $companyid]);
+
+            $userlist = array_intersect_key($userlist, $allcompanyusers);
+
+            // Remove the company groups.
+            self::delete_company_course_group($companyid, $course, false);
+        }
+
+        // Remove their enrolments.
+        foreach ($userlist as $user) {
+            $ues = $courseenrolment->get_user_enrolments($user->id);
+            foreach ($ues as $ue) {
+                list ($instance, $plugin) = $courseenrolment->get_user_enrolment_components($ue);
+                if ($instance && $plugin && $plugin->allow_unenrol_user($instance, $ue)) {
+                   $plugin->unenrol_user($instance, $ue->userid);
+                }
             }
         }
 
@@ -936,35 +1028,6 @@ class company {
         // Remove the course from the company.
         if ($iomadcourse->shared != 1 && !self::remove_course($course, $companyid)) {
             $errors = true;
-        }
-
-        // Remove the course from any licenses
-        if ($licenses = $DB->get_records_sql("SELECT cl.* FROM {companylicense} cl
-                                              JOIN {companylicense_courses} clc ON (cl.id = clc.licenseid)
-                                              WHERE clc.courseid = :courseid
-                                              AND cl.companyid = :companyid",
-                                              array('courseid' => $courseid,
-                                                    'companyid' => $companyid))) {
-            foreach ($licenses as $license) {
-                // Delete anyone using the license for that course.
-                if (!$DB->delete_records('companylicense_users', array('licenseid' => $license->id, 'licensecourseid' => $courseid))) {
-                    $errors = true;
-                }
-                // Delete the course from the license.
-                if (!$DB->delete_records('companylicense_courses', array('licenseid' => $license->id, 'courseid' => $courseid))) {
-                    $errors = true;
-                }
-
-                // Fire an event for this.
-                $eventother = array('licenseid' => $license->id,
-                                    'parentid' => $license->parentid);
-
-                $event = \block_iomad_company_admin\event\company_license_updated::create(array('context' => \core\context\company::instance($companyid),
-                                                                                                'userid' => $USER->id,
-                                                                                                'objectid' => $license->id,
-                                                                                                'other' => $eventother));
-                $event->trigger();
-            }
         }
 
         // Is the course a shared course?
