@@ -1211,7 +1211,9 @@ class company_user {
             $returnobject->companylogo = company::get_logo_url($companyid, null, 25);
             $mycompanies = company::get_companies_select(false, false, false, 'cu.lastused DESC, name ASC');
             $returncompanies = [];
-            if (count($mycompanies) > 1) {
+            if (count($mycompanies) > 1 ||
+                (count($mycompanies) == 1
+                && array_key_first($mycompanies) != $companyid)) {
                 $returnobject->hasmultiple = true;
                 // Cut back to only show most recent companies.
                 $total = 1;
