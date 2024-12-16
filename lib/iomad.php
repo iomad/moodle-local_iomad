@@ -56,11 +56,13 @@ class iomad {
      * @returns int
      */
     public static function get_my_companyid($context, $required=true) {
-        global $SESSION, $USER, $DB;
+        global $SESSION, $USER, $DB, $CFG;
 
         // are we logged in?
         if (during_initial_install() ||
-            (empty($USER->id) && empty($SESSION->currenteditingcompany)) ||
+            (empty($USER->id) &&
+             (empty($SESSION->currenteditingcompany) &&
+              empty($CFG->foundcompanyid))) ||
             !$DB->get_manager()->table_exists('company')) {
             return -1;
         }
@@ -76,6 +78,14 @@ class iomad {
             } else {
                 redirect(new moodle_url('/blocks/iomad_company_admin/index.php'), get_string('pleaseselect', 'block_iomad_company_admin'));
             }
+        } else if (!empty($CFG->foundcompanyid)) {
+            // If the SESSION variable isn't set up when we initially find the company id
+            // e.g. on hostname matching - we end up here.
+            $companyid = $CFG->foundcompanyid;
+            $SESSION->currenteditingcompany = $CFG->foundcompanyid;
+
+            // Forget this from now on.
+            unset ($CFG->foundcompanyid);
         } else {
             $companyid = 0;
         }
@@ -770,15 +780,17 @@ class iomad {
 
         // Get the user company id.
         $companyid = iomad::get_my_companyid(context_system::instance());
-        $company = new company($companyid);
+        if ($companyid > 0) {
+            $company = new company($companyid);
 
-        $companycourses = $company->get_menu_courses(true, false, false, false, false, true);
+            $companycourses = $company->get_menu_courses(true, false, false, false, false, true);
         
-        // Check if the passed courseid is in the list.
-        if (!empty($companycourses[$courseid])) {
+            // Check if the passed courseid is in the list.
+            if (!empty($companycourses[$courseid])) {
 
-            // Course is visible.
-            return true;
+                // Course is visible.
+                return true;
+            }
         }
 
         // User can't see it.
