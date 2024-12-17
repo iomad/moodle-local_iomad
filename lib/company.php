@@ -4518,7 +4518,7 @@ class company {
                     $course = $DB->get_record('course', array('id' => $courseid));
                     $user = $DB->get_record('user', array('id' => $userid));
                     $company = new company($trackrec->companyid);
-                    $attachment = null;
+                    $attachment = (object) [];
                     if ($trackfileinfo = $DB->get_record('local_iomad_track_certs', array('trackid' => $trackrec->id))) {
                         $fileinfo = $DB->get_record('files', array('itemid' => $trackrec->id, 'component' => 'local_iomad_track', 'filename' => $trackfileinfo->filename));
                         $filedir1 = substr($fileinfo->contenthash,0,2);
