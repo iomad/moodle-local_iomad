@@ -306,7 +306,7 @@ class company_user {
         }
 
         // Only really delete the user if they aren't in any other company.
-        if (!$DB->get_records('company_users', ['userid' => $userid])) {
+        if (!$DB->get_records('company_users', ['userid' => $userid, 'suspended' => 0])) {
             // Mark user as suspended.
             $DB->set_field('user', 'suspended', 1, array('id' => $userid));
 
