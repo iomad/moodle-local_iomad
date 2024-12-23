@@ -46,6 +46,10 @@ class user_search_form extends moodleform {
     protected $toname;
     protected $useusertype;
     protected $validonly;
+    protected $addfromb;
+    protected $addtob;
+    protected $fromnameb;
+    protected $tonameb;
 
     public function definition() {
         global $CFG, $DB, $USER, $SESSION, $companycontext;
