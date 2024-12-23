@@ -38,6 +38,7 @@ class course_search_form extends moodleform {
     protected $params = [];
     protected $customfields = [];
 
+    protected $title;
     public function __construct($url, $params, $title = "") {
         global $DB;
         $this->params = $params;
