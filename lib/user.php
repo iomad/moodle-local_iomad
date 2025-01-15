@@ -662,7 +662,6 @@ class company_user {
         if (empty($due)) {
             $due = time();
         }
-        set_user_preference('iomad_temporary', self::rc4encrypt($temppassword), $user);
         unset_user_preference('create_password', $user);
         if ( $sendemail ) {
             if ($reset) {
@@ -710,36 +709,6 @@ class company_user {
         } else {
             unset_user_preference('iomad_send_password', $user);
         }
-    }
-
-    /* Get the user's temporary password
-     * @param stdclass $user
-     * @return text
-     */
-    public static function get_temporary_password($user) {
-        $pwd = get_user_preferences('iomad_temporary', '', $user);
-        if ($pwd != '') {
-            $pwd = self::rc4decrypt($pwd);
-        }
-        return $pwd;
-    }
-
-    /* Encrypt a text string
-     * @param text $data
-     * @return text
-     */
-    private static function rc4encrypt($data) {
-        $password = 'knfgjeingj';
-        return endecrypt($password, $data, '');
-    }
-
-    /* Decrypt a text string
-     * @param text $data
-     * @return text
-     */
-    public static function rc4decrypt($data) {
-        $password = 'knfgjeingj';
-        return endecrypt($password, $data, 'de');
     }
 
     /* Check to see if a user can see a company
