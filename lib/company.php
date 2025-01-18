@@ -4598,8 +4598,8 @@ class company {
 
         $license = new stdclass();
         $license->length = $licenserecord->validlength;
-        $license->valid = date($CFG->iomad_date_format, $licenserecord->expirydate);
-        $license->startdate = date($CFG->iomad_date_format, $licenserecord->startdate);
+        $license->valid = userdate($licenserecord->expirydate, $CFG->iomad_date_format);
+        $license->startdate = userdate($licenserecord->startdate, $CFG->iomad_date_format);
 
         if (!$noemail) {
         // Send out the email.
@@ -4733,7 +4733,7 @@ class company {
 
         $license = new stdclass();
         $license->length = $licenserecord->validlength;
-        $license->valid = date($CFG->iomad_date_format, $licenserecord->expirydate);
+        $license->valid = userdate($licenserecord->expirydate, $CFG->iomad_date_format);
 
         if ($emailrecs = $DB->get_records('email', array('userid' => $user->id,
                                                          'courseid' => $course->id,
