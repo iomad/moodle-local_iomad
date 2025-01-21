@@ -100,7 +100,11 @@ class deletecompanytask extends adhoc_task {
         $DB->delete_records('company_role_templates_ass', ['companyid' => $companyrec->id]);
 
         mtrace("dealing with email templates");
+        $companytemplates = $DB->get_records('email_template', ['companyid' => $companyrec->id]);
         $DB->delete_records('email_template', ['companyid' => $companyrec->id]);
+        foreach ($companytemplates as $companytemplate) {
+            $DB->delete_records('email_template_strings', ['templateid' => $companytemplate->id]);
+        }
 
         mtrace("dealing with users");
         $users = $DB->get_records_sql("SELECT DISTINCT userid
