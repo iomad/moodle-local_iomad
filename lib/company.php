@@ -645,14 +645,29 @@ class company {
         }
 
         // Insert the restrictions.
-        // Remove them first.
+        // Remove them first - starting with the strings table.
+        $currenttemplates = $DB->get_records('email_template', ['companyid' => $this->id]);
+        foreach ($currenttemplates as $currenttemplate) {
+            $DB->delete_records('email_template_strings', ['templateid' => $currenttemplate->id]);
+        }
+
+        // Delete everything else.
         $DB->delete_records('email_template', array('companyid' => $this->id));
 
         // Add the template.
         foreach ($templates as $template) {
+            $templatesetid = $template->id;
             unset($template->templateset);
             $template->companyid = $this->id;
-            $DB->insert_record('email_template', $template);
+            $templateid = $DB->insert_record('email_template', $template);
+
+            // Get all of the lang strings too.
+            $langstrings = $DB->get_records('email_templateset_template_strings', ['templatesetid' => $templatesetid]);
+            foreach ($langstrings as $langstring) {
+                $langstring->templateid = $templateid;
+                unset($langstring->templatesetid);
+                $DB->instert_record('email_template_strings', $langstring); 
+            }
         }
 
         return true;
