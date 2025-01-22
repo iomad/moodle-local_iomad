@@ -855,6 +855,7 @@ class company_user {
             if ($modules = $DB->get_records_sql("SELECT id FROM {course_modules} WHERE course = :course AND completion != 0", array('course' => $courseid))) {
                 foreach ($modules as $module) {
                     $DB->delete_records('course_modules_completion', array('userid' => $userid, 'coursemoduleid' => $module->id));
+                    $DB->delete_records('course_modules_viewed', array('userid' => $userid, 'coursemoduleid' => $module->id));
                 }
             }
 
