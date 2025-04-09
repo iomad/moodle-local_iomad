@@ -675,7 +675,7 @@ class company {
             foreach ($langstrings as $langstring) {
                 $langstring->templateid = $templateid;
                 unset($langstring->templatesetid);
-                $DB->instert_record('email_template_strings', $langstring); 
+                $DB->insert_record('email_template_strings', $langstring); 
             }
         }
 
