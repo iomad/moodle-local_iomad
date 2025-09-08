@@ -49,6 +49,7 @@ $plugin->dependencies = [
         'block_iomad_welcome' => 2024100700,
         'block_mycourses' => 2024100700,
         'enrol_license' => 2024100700,
+        'filter_iomad' => 2025081300,
         'local_course_selector' => 2024100700,
         'local_email' => 2024111902,
         'local_email_reports' => 2024111900,
