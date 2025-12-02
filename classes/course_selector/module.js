@@ -1,37 +1,37 @@
 /**
- * JavaScript for the framework selectors.
+ * JavaScript for the course selectors.
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @package frameworkselector
+ * @package courseselector
  */
 
-// Define the core_framework namespace if it has not already been defined
-M.local_iomad_framework_selector = M.local_iomad_framework_selector || {};
-// Define a framework selectors array for against the cure_framework namespace
-M.local_iomad_framework_selector.framework_selectors = [];
+// Define the core_course namespace if it has not already been defined
+M.local_iomad_course_selector = M.local_iomad_course_selector || {};
+// Define a course selectors array for against the cure_course namespace
+M.local_iomad_course_selector.course_selectors = [];
 /**
- * Retrieves an instantiated framework selector or null if there isn't one by the requested name
+ * Retrieves an instantiated course selector or null if there isn't one by the requested name
  * @param {string} name The name of the selector to retrieve
  * @return bool
  */
-M.local_iomad_framework_selector.get_framework_selector = function (name) {
-    return this.framework_selectors[name] || null;
+M.local_iomad_course_selector.get_course_selector = function (name) {
+    return this.course_selectors[name] || null;
 };
 
 /**
- * Initialise a new framework selector.
+ * Initialise a new course selector.
  *
  * @param {YUI} Y The YUI3 instance
  * @param {string} name the control name/id.
- * @param {string} hash the hash that identifies this selector in the framework's session.
- * @param {array} extrafields extra fields we are displaying for each framework in addition to fullname.
+ * @param {string} hash the hash that identifies this selector in the course's session.
+ * @param {array} extrafields extra fields we are displaying for each course in addition to fullname.
  * @param {string} lastsearch The last search that took place
  */
-M.local_iomad_framework_selector.init_framework_selector = function (Y, name, hash, extrafields, lastsearch) {
-    // Creates a new framework_selector object
-    var framework_selector = {
+M.local_iomad_course_selector.init_course_selector = function (Y, name, hash, extrafields, lastsearch) {
+    // Creates a new course_selector object
+    var course_selector = {
         /** This id/name used for this control in the HTML. */
         name : name,
-        /** Array of fields to display for each framework, in addition to fullname. */
+        /** Array of fields to display for each course, in addition to fullname. */
         extrafields: extrafields,
         /** Number of seconds to delay before submitting a query request */
         querydelay : 0.5,
@@ -39,7 +39,7 @@ M.local_iomad_framework_selector.init_framework_selector = function (Y, name, ha
         searchfield : Y.one('#' + name + '_searchtext'),
         /** The clear button. */
         clearbutton : null,
-        /** The select element that contains the list of frameworks. */
+        /** The select element that contains the list of courses. */
         listbox : Y.one('#' + name),
         /** Used to hold the timeout id of the timeout that waits before doing a search. */
         timeoutid : null,
@@ -49,7 +49,7 @@ M.local_iomad_framework_selector.init_framework_selector = function (Y, name, ha
          *  handle_selection_change to track when this status changes. */
         selectionempty : true,
         /**
-         * Initialises the framework selector object
+         * Initialises the course selector object
          * @constructor
          */
         init : function() {
@@ -67,7 +67,7 @@ M.local_iomad_framework_selector.init_framework_selector = function (Y, name, ha
             this.listbox.on('change', this.handle_selection_change, this);
 
             // And when the search any substring preference changes. Do an immediate re-search.
-            Y.one('#frameworkselector_searchanywhereid').on('click', this.handle_searchanywhere_change, this);
+            Y.one('#courseselector_searchanywhereid').on('click', this.handle_searchanywhere_change, this);
 
             // Define our custom event.
             //this.createEvent('selectionchanged');
@@ -106,7 +106,7 @@ M.local_iomad_framework_selector.init_framework_selector = function (Y, name, ha
         handle_selection_change : function() {
             var isselectionempty = this.is_selection_empty();
             if (isselectionempty !== this.selectionempty) {
-                this.fire('framework_selector:selectionchanged', isselectionempty);
+                this.fire('course_selector:selectionchanged', isselectionempty);
             }
             this.selectionempty = isselectionempty;
         },
@@ -139,9 +139,9 @@ M.local_iomad_framework_selector.init_framework_selector = function (Y, name, ha
                 return;
             }
 
-            Y.io(M.cfg.wwwroot + '/local/iomad/classes/framework_selector/search.php', {
+            Y.io(M.cfg.wwwroot + '/local/iomad/classes/course_selector/search.php', {
                 method: 'POST',
-                data: 'selectorid=' + hash + '&sesskey=' + M.cfg.sesskey + '&search=' + value + '&frameworkselector_searchanywhere=' + this.get_option('searchanywhere'),
+                data: 'selectorid=' + hash + '&sesskey=' + M.cfg.sesskey + '&search=' + value + '&courseselector_searchanywhere=' + this.get_option('searchanywhere'),
                 on: {
                     success:this.handle_response,
                     failure:this.handle_failure
@@ -155,7 +155,7 @@ M.local_iomad_framework_selector.init_framework_selector = function (Y, name, ha
         /**
          * Handle what happens when we get some data back from the search.
          * @param {int} requestid not used.
-         * @param {object} response the list of frameworks that was returned.
+         * @param {object} response the list of courses that was returned.
          */
         handle_response : function(requestid, response) {
             try {
@@ -175,23 +175,23 @@ M.local_iomad_framework_selector.init_framework_selector = function (Y, name, ha
 
             // If we are in developer debug mode, output a link to help debug the failure.
             if (M.cfg.developerdebug) {
-                this.searchfield.insert(Y.Node.create('<a href="' + M.cfg.wwwroot + '/local/iomad/classes/framework_selector/search.php?selectorid=' +
+                this.searchfield.insert(Y.Node.create('<a href="' + M.cfg.wwwroot + '/local/iomad/classes/course_selector/search.php?selectorid=' +
                                                        hash + '&sesskey=' + M.cfg.sesskey + '&search=' + this.get_search_text() +
                                                       '&debug=1">Ajax call failed. Click here to try the search call directly.</a>'));
             }
         },
         /**
          * This method should do the same sort of thing as the PHP method
-         * framework_selector_base::output_options.
-         * @param {object} data the list of frameworks to populate the list box with.
+         * course_selector_base::output_options.
+         * @param {object} data the list of courses to populate the list box with.
          */
         output_options : function(data) {
             // Clear out the existing options, keeping any ones that are already selected.
-            var selectedframeworks = {};
+            var selectedcourses = {};
             this.listbox.all('optgroup').each(function(optgroup){
                 optgroup.all('option').each(function(option){
                     if (option.get('selected')) {
-                        selectedframeworks[option.get('value')] = {
+                        selectedcourses[option.get('value')] = {
                             id : option.get('value'),
                             name : option.get('innerText') || option.get('textContent'),
                             disabled: option.get('disabled')
@@ -205,38 +205,38 @@ M.local_iomad_framework_selector.init_framework_selector = function (Y, name, ha
             // Output each optgroup.
             var count = 0;
             for (var groupname in data.results) {
-                this.output_group(groupname, data.results[groupname], selectedframeworks, true);
+                this.output_group(groupname, data.results[groupname], selectedcourses, true);
                 count++;
             }
             if (!count) {
-                var searchstr = (this.lastsearch != '')?this.insert_search_into_str(M.str.local_iomad_framework_selector.nomatchingframeworks, this.lastsearch):M.str.moodle.none;
-                this.output_group(searchstr, {}, selectedframeworks, true)
+                var searchstr = (this.lastsearch != '')?this.insert_search_into_str(M.str.local_iomad_course_selector.nomatchingcourses, this.lastsearch):M.str.moodle.none;
+                this.output_group(searchstr, {}, selectedcourses, true)
             }
 
-            // If there were previously selected frameworks who do not match the search, show them too.
-            if (this.get_option('preserveselected') && selectedframeworks) {
-                this.output_group(this.insert_search_into_str(M.str.local_iomad_framework_selector.previouslyselectedframeworks, this.lastsearch), selectedframeworks, true, false);
+            // If there were previously selected courses who do not match the search, show them too.
+            if (this.get_option('preserveselected') && selectedcourses) {
+                this.output_group(this.insert_search_into_str(M.str.local_iomad_course_selector.previouslyselectedcourses, this.lastsearch), selectedcourses, true, false);
             }
             this.handle_selection_change();
         },
         /**
          * This method should do the same sort of thing as the PHP method
-         * framework_selector_base::output_optgroup.
+         * course_selector_base::output_optgroup.
          *
          * @param {string} groupname the label for this optgroup.v
-         * @param {object} frameworks the frameworks to put in this optgroup.
-         * @param {boolean|object} selectedframeworks if true, select the frameworks in this group.
+         * @param {object} courses the courses to put in this optgroup.
+         * @param {boolean|object} selectedcourses if true, select the courses in this group.
          * @param {boolean} processsingle
          */
-        output_group : function(groupname, frameworks, selectedframeworks, processsingle) {
+        output_group : function(groupname, courses, selectedcourses, processsingle) {
             var optgroup = Y.Node.create('<optgroup></optgroup>');
             var count = 0;
-            for (var frameworkid in frameworks) {
-                var framework = frameworks[frameworkid];
-                var option = Y.Node.create('<option value="' + frameworkid + '">' + framework.name + '</option>');
-                if (framework.disabled) {
+            for (var courseid in courses) {
+                var course = courses[courseid];
+                var option = Y.Node.create('<option value="' + courseid + '">' + course.name + '</option>');
+                if (course.disabled) {
                     option.set('disabled', true);
-                } else if (selectedframeworks === true || selectedframeworks[frameworkid]) {
+                } else if (selectedcourses === true || selectedcourses[courseid]) {
                     option.set('selected', true);
                 } else {
                     option.set('selected', false);
@@ -298,7 +298,7 @@ M.local_iomad_framework_selector.init_framework_selector = function (Y, name, ha
          * @return the value of one of the option checkboxes.
          */
         get_option : function(name) {
-            var checkbox = Y.one('#frameworkselector_' + name + 'id');
+            var checkbox = Y.one('#courseselector_' + name + 'id');
             if (checkbox) {
                 return (checkbox.get('checked'));
             } else {
@@ -306,36 +306,36 @@ M.local_iomad_framework_selector.init_framework_selector = function (Y, name, ha
             }
         }
     };
-    // Augment the framework selector with the EventTarget class so that we can use
+    // Augment the course selector with the EventTarget class so that we can use
     // custom events
-    Y.augment(framework_selector, Y.EventTarget, null, null, {});
-    // Initialise the framework selector
-    framework_selector.init();
-    // Store the framework selector so that it can be retrieved
-    this.framework_selectors[name] = framework_selector;
-    // Return the framework selector
-    return framework_selector;
+    Y.augment(course_selector, Y.EventTarget, null, null, {});
+    // Initialise the course selector
+    course_selector.init();
+    // Store the course selector so that it can be retrieved
+    this.course_selectors[name] = course_selector;
+    // Return the course selector
+    return course_selector;
 };
 
 /**
- * Initialise a class that updates the framework's preferences when they change one of
+ * Initialise a class that updates the course's preferences when they change one of
  * the options checkboxes.
  * @constructor
  * @param {YUI} Y
  * @return Tracker object
  */
-M.local_iomad_framework_selector.init_framework_selector_options_tracker = function(Y) {
-    // Create a framework selector options tracker
-    var framework_selector_options_tracker = {
+M.local_iomad_course_selector.init_course_selector_options_tracker = function(Y) {
+    // Create a course selector options tracker
+    var course_selector_options_tracker = {
         /**
          * Initlises the option tracker and gets everything going.
          * @constructor
          */
         init : function() {
             var settings = [
-                'frameworkselector_preserveselected',
-                'frameworkselector_autoselectunique',
-                'frameworkselector_searchanywhere'
+                'courseselector_preserveselected',
+                'courseselector_autoselectunique',
+                'courseselector_searchanywhere'
             ];
             for (var s in settings) {
                 var setting = settings[s];
@@ -352,7 +352,7 @@ M.local_iomad_framework_selector.init_framework_selector_options_tracker = funct
         }
     };
     // Initialise the options tracker
-    framework_selector_options_tracker.init();
+    course_selector_options_tracker.init();
     // Return it just incase it is ever wanted
-    return framework_selector_options_tracker;
+    return course_selector_options_tracker;
 };
